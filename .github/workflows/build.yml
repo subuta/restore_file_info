@@ -37,7 +37,7 @@ jobs:
             ${{ runner.os }}-${{ matrix.target }}-buildx-
 
       - name: Install deps
-        run: npm ci
+        run: yarn install --frozen-lockfile
         working-directory: ./build
       - name: Run Dagger pipeline
         run: |
