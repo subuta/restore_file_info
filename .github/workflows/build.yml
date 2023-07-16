@@ -13,7 +13,7 @@ jobs:
           - x86_64-unknown-linux-musl
           - aarch64-unknown-linux-musl
         include:
-          - target: x86_64-apple-darwin
+          - target: x86_64-unknown-linux-musl
             os: macos-latest
           - target: aarch64-unknown-linux-musl
             os: macos-latest
@@ -35,7 +35,7 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.target }}-buildx-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-${{ matrix.target }}-buildx-
-            
+
       - name: Install deps
         run: npm ci
         working-directory: ./build
