@@ -11,3 +11,7 @@ filetime = "0.2"
 serde = { version = "^1.0.101", features = ["derive"] }
 clap = {version = "4.1.1", features = ["derive"]}
 csv = "1.2"
+
+[[bin]]
+name = "version"
+path = "scripts/version.rs"

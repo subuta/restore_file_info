@@ -1,0 +1,71 @@
+name: Run build
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        target:
+          - x86_64-unknown-linux-musl
+          - aarch64-unknown-linux-musl
+        include:
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-unknown-linux-musl
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
+    outputs:
+      version: ${{ steps.properties.outputs.version }}
+    steps:
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - uses: actions/checkout@v3
+
+      # Enable Docker build cache
+      # So now you can use Actions' own caching!
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-${{ matrix.target }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.target }}-buildx-
+            
+      - name: Install deps
+        run: npm ci
+        working-directory: ./build
+      - name: Run Dagger pipeline
+        run: |
+          TARGET=${{ matrix.target }} yarn build
+        working-directory: ./build
+      - name: Export properties
+        id: properties
+        run: |
+          VERSION="cat ./dist/${{ matrix.target }}/version.txt"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Archive production artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist-${{ matrix.target }}-${{steps.properties.outputs.version}}
+          path: |
+            dist
+
+      # This ugly bit is necessary if you don't want your cache to grow forever
+      # until it hits GitHub's limit of 5GB.
+      # Temp fix
+      # https://github.com/docker/build-push-action/issues/252
+      # https://github.com/moby/buildkit/issues/1896
+      - name: Move cache
+        shell: bash
+        run: |
+          # Run only if build cache exists.
+          if [ -d "/tmp/.buildx-cache-new" ] 
+          then
+            rm -rf /tmp/.buildx-cache
+            mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+          fi

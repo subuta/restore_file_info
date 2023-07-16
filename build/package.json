@@ -3,12 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node --loader ts-node/esm src/build.mts"
+    "build": "yarn build:dagger && yarn copy",
+    "build:dagger": "node --loader ts-node/esm src/build.mts",
+    "copy": "copyfiles './bin/**/*' ../dist -u 1"
   },
   "devDependencies": {
     "@dagger.io/dagger": "^0.6.3",
     "@trivago/prettier-plugin-sort-imports": "^4.1.1",
-    "prettier": "^2.8.8"
+    "copyfiles": "^2.4.1",
+    "prettier": "^2.8.8",
+    "yarn": "^1.22.19"
   },
   "dependencies": {
     "pkg-dir": "^7.0.0",
