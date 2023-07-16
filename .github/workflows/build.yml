@@ -38,7 +38,7 @@ jobs:
 
       - name: Install necessary dependencies for cross build
         run: |
-          if [ '${{ inputs.target }}' = 'aarch64-unknown-linux-musl' ]; then
+          if [ '${{ matrix.target }}' = 'aarch64-unknown-linux-musl' ]; then
             apt-get update
             apt-get install -y gcc-aarch64-linux-gnu
           fi
