@@ -13,7 +13,7 @@ await connect(
     const target = process.env.TARGET || `${getArch()}-unknown-linux-musl`;
     let opts: ClientContainerOpts = {} as ClientContainerOpts;
     if (target === 'aarch64-unknown-linux-musl') {
-      // opts = { platform: 'linux/arm64' } as ClientContainerOpts;
+      opts = { platform: 'linux/arm64' } as ClientContainerOpts;
     }
 
     const isLinux = getPlatform() === 'unknown-linux-musl';
