@@ -52,6 +52,9 @@ jobs:
             export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-musl-gcc
             export RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-lgcc"
           fi
+          echo '==='
+          echo $RUSTFLAGS
+          echo '==='
           TARGET=${{ matrix.target }} yarn build
         working-directory: ./build
       - name: Export properties
