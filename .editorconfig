@@ -1,0 +1,6 @@
+# EditorConfig is awesome: https://EditorConfig.org
+# SEE: https://gist.github.com/aaripurna/56ff2ab5f6320984c105f337d500cd3f
+
+# Tab indentation (no size specified)
+[Makefile]
+indent_style = tab

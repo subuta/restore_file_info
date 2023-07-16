@@ -1,0 +1,13 @@
+[package]
+name = "restore_file_info"
+version = "0.1.0"
+authors = ["subuta <shunta.3110@gmail.com>"]
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0"
+duct = "0.13.6"
+filetime = "0.2"
+serde = { version = "^1.0.101", features = ["derive"] }
+clap = {version = "4.1.1", features = ["derive"]}
+csv = "1.2"
