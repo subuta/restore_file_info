@@ -39,6 +39,10 @@ jobs:
       - name: Install deps
         run: yarn install --frozen-lockfile
         working-directory: ./build
+      - name: Try echo
+        run: |
+          docker -v
+          echo "${{ matrix.target }}"
       - name: Run Dagger pipeline
         run: |
           TARGET=${{ matrix.target }} yarn build
