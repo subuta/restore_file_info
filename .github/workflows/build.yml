@@ -39,10 +39,6 @@ jobs:
       - name: Install deps
         run: yarn install --frozen-lockfile
         working-directory: ./build
-      - name: Try echo
-        run: |
-          docker -v
-          echo "${{ matrix.target }}"
       - name: Run Dagger pipeline
         run: |
           TARGET=${{ matrix.target }} yarn build
@@ -50,7 +46,7 @@ jobs:
       - name: Export properties
         id: properties
         run: |
-          VERSION="cat ./dist/${{ matrix.target }}/version.txt"
+          VERSION="$(cat ./dist/${{ matrix.target }}/version.txt)"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Archive production artifacts
         uses: actions/upload-artifact@v3
