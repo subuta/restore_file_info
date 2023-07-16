@@ -1,7 +1,7 @@
 import { bash, exportCachedFile } from './lib/bash.mjs';
 import { lsIgnoredFiles } from './lib/git.mjs';
 import { getArch } from './lib/process.mjs';
-import Client, { connect } from '@dagger.io/dagger';
+import Client, { ClientContainerOpts, connect } from '@dagger.io/dagger';
 import path from 'path';
 import { packageDirectorySync } from 'pkg-dir';
 
@@ -10,7 +10,13 @@ const ROOT_DIR = path.resolve(packageDirectorySync() || '', '../');
 // initialize Dagger client
 await connect(
   async (client: Client) => {
-    const rust = client.container().from('rust:1.71.0-slim-bullseye');
+    let opts: ClientContainerOpts = {} as ClientContainerOpts;
+    const target = process.env.TARGET || `${getArch()}-unknown-linux-musl`;
+    if (target === 'aarch64-unknown-linux-musl') {
+      opts = { platform: 'linux/arm64' } as ClientContainerOpts;
+    }
+
+    const rust = client.container(opts).from('rust:1.71.0-slim-bullseye');
 
     const registryCache = client.cacheVolume('registry');
     const targetCache = client.cacheVolume('target');
@@ -22,8 +28,6 @@ await connect(
       .directory(path.resolve(ROOT_DIR), {
         exclude: [...gitIgnoredFiles, 'build/'],
       });
-
-    const target = process.env.TARGET || `${getArch()}-unknown-linux-musl`;
 
     const builder = await rust
       .withDirectory('/app', restoreFileInfo)
