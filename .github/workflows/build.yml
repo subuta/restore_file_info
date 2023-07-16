@@ -36,6 +36,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.target }}-buildx-
 
+      - name: Install necessary dependencies for cross build
+        run: |
+          if [ '${{ inputs.target }}' = 'aarch64-unknown-linux-musl' ]; then
+            apt-get update
+            apt-get install -y gcc-aarch64-linux-gnu
+          fi
       - name: Install deps
         run: yarn install --frozen-lockfile
         working-directory: ./build
