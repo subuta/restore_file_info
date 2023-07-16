@@ -36,22 +36,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.target }}-buildx-
 
-      - name: Install necessary dependencies for cross build
-        run: |
-          if [ '${{ matrix.target }}' = 'aarch64-unknown-linux-musl' ]; then
-            sudo apt-get update
-            sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
-          fi
       - name: Install deps
         run: yarn install --frozen-lockfile
         working-directory: ./build
       - name: Run Dagger pipeline
         run: |
-          if [ '${{ matrix.target }}' = 'aarch64-unknown-linux-musl' ]; then
-            export CC=aarch64-linux-gnu-gcc
-            export CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER=aarch64-linux-musl-gcc
-            export RUSTFLAGS="-C target-feature=+crt-static -C link-arg=-lgcc"
-          fi
           TARGET=${{ matrix.target }} yarn build
         working-directory: ./build
       - name: Export properties

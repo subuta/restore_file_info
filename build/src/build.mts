@@ -1,6 +1,6 @@
 import { bash, exportCachedFile } from './lib/bash.mjs';
 import { lsIgnoredFiles } from './lib/git.mjs';
-import { getArch } from './lib/process.mjs';
+import { getArch, getPlatform } from './lib/process.mjs';
 import Client, { ClientContainerOpts, connect } from '@dagger.io/dagger';
 import path from 'path';
 import { packageDirectorySync } from 'pkg-dir';
@@ -10,13 +10,18 @@ const ROOT_DIR = path.resolve(packageDirectorySync() || '', '../');
 // initialize Dagger client
 await connect(
   async (client: Client) => {
-    let opts: ClientContainerOpts = {} as ClientContainerOpts;
     const target = process.env.TARGET || `${getArch()}-unknown-linux-musl`;
+    let opts: ClientContainerOpts = {} as ClientContainerOpts;
     if (target === 'aarch64-unknown-linux-musl') {
       opts = { platform: 'linux/arm64' } as ClientContainerOpts;
     }
 
-    const rust = client.container(opts).from('rust:1.71.0-slim-bullseye');
+    const isLinux = getPlatform() === 'unknown-linux-musl';
+    let rust = client.container(opts).from('rust:1.71.0-slim-bullseye');
+    if (target === 'aarch64-unknown-linux-musl' && isLinux) {
+      console.log('Try cross build "arm64" on linux');
+      rust = rust.withEnvVariable('RUSTFLAGS', '-C target-feature=+crt-static');
+    }
 
     const registryCache = client.cacheVolume('registry');
     const targetCache = client.cacheVolume('target');
