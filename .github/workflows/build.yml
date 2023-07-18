@@ -56,7 +56,7 @@ jobs:
           # Copy bin to "dist"
           mkdir -p ../dist
           cp -rf ./bin/* ../dist
-        working-directory: ./build
+        working-directory: build
       - name: Export properties
         id: properties
         run: |
