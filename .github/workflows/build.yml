@@ -37,18 +37,13 @@ jobs:
 
       # Enable Docker build cache
       # So now you can use Actions' own caching!
-      - name: Cache Docker layers
+      - name: Cache Build caches
         uses: actions/cache@v3
         with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-${{ matrix.target }}-buildx-${{ github.sha }}
+          path: build/cache
+          key: ${{ runner.os }}-${{ matrix.target }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-${{ matrix.target }}-buildx-
-
-      - name: Run Dagger pipeline
-        run: |
-          pwd
-          ls -alh ./
+            ${{ runner.os }}-${{ matrix.target }}-
 
       - name: Run Dagger pipeline
         run: |
@@ -72,18 +67,3 @@ jobs:
           name: dist-${{ matrix.target }}-${{steps.properties.outputs.version}}
           path: |
             dist
-
-      # This ugly bit is necessary if you don't want your cache to grow forever
-      # until it hits GitHub's limit of 5GB.
-      # Temp fix
-      # https://github.com/docker/build-push-action/issues/252
-      # https://github.com/moby/buildkit/issues/1896
-      - name: Move cache
-        shell: bash
-        run: |
-          # Run only if build cache exists.
-          if [ -d "/tmp/.buildx-cache-new" ] 
-          then
-            rm -rf /tmp/.buildx-cache
-            mv /tmp/.buildx-cache-new /tmp/.buildx-cache
-          fi
