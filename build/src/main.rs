@@ -2,6 +2,7 @@ mod cache;
 mod git;
 mod cli;
 mod cargo;
+mod rfi;
 
 use std::collections::HashMap;
 use eyre::{Result, ContextCompat};
@@ -13,6 +14,7 @@ use crate::cargo::get_package_version;
 use crate::cli::Cli;
 use crate::cli::ParseCli;
 use crate::git::{ls_ignored_paths};
+use crate::rfi::install_rfi;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -48,13 +50,19 @@ async fn main() -> Result<()> {
         .container()
         .from("messense/cargo-zigbuild:0.16.12")
         .with_exec(vec!["bash", "-c", "apt-get update && apt-get install -y jq"])
-        .with_mounted_directory("/app", host_source_dir.id().await?)
-        .with_workdir("/app");
+        .with_mounted_directory("/app", host_source_dir.id().await?);
 
     builder = dir_cache.restore(builder).await?;
+    builder = install_rfi(builder);
+
+    // Restore file_info
+    builder = builder.with_workdir("/app/target")
+        .with_exec(vec!["restore_file_info"]);
+
     let target = cli.get_target();
 
-    let result = builder
+    let mut result = builder
+        .with_workdir("/app")
         .with_env_variable("CARGO_HOME", "/root/.cargo")
         .with_exec(vec!["cargo", "zigbuild", "--release", "--target", &target]);
 
@@ -67,6 +75,10 @@ async fn main() -> Result<()> {
     result.with_exec(vec!["bash", "-c", &format!("echo '{}' > /app/version.txt", version)])
         .file("/app/version.txt")
         .export(&format!("./bin/{}/version.txt", target)).await?;
+
+    // Dump file_info.
+    result = result.with_workdir("/app/target")
+        .with_exec(vec!["restore_file_info", "dump"]);
 
     // Dump cache into host filesystem.
     dir_cache.dump(result).await?;
