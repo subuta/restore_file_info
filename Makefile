@@ -4,9 +4,12 @@ build: build_release cp_build
 
 .PHONY: build_release
 build_release:
-	cargo build --release
+	cd ./build && ./target/release/build_restore_file_info
 
 .PHONY: cp_build
 cp_build:
-	mkdir -p ./dist
-	cp ./target/release/restore_file_info ./dist/restore_file_info
+	cd ./build && mkdir -p ../dist && cp -rf ./bin/* ../dist
+
+.PHONY: build_tools
+build_tools:
+	cd ./build && cargo build --release

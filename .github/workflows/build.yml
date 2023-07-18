@@ -55,8 +55,8 @@ jobs:
             cargo run -- x64_linux
           fi
           # Copy bin to "dist"
-          mkdir -p ../dist
-          cp -rf ./bin/* ../dist
+          cd ../
+          make cp_build
         working-directory: build
       - name: Export properties
         id: properties
