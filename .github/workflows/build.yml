@@ -20,11 +20,19 @@ jobs:
     runs-on: ${{ matrix.os }}
     outputs:
       version: ${{ steps.properties.outputs.version }}
+    env:
+      CARGO_TERM_COLOR: always
     steps:
-      - uses: actions/setup-node@v3
+      # SEE: [rust-cache/.github/workflows/simple.yml at master · Swatinem/rust-cache](https://github.com/Swatinem/rust-cache/blob/master/.github/workflows/simple.yml)
+      # When rustup is updated, it tries to replace its binary, which on Windows is somehow locked.
+      # This can result in the CI failure, see: https://github.com/rust-lang/rustup/issues/3029
+      - run: |
+          rustup set auto-self-update disable
+          rustup toolchain install stable --profile minimal
+
+      - uses: Swatinem/rust-cache@v2
         with:
-          node-version: 18
-      - uses: actions/checkout@v3
+          shared-key: "app"
 
       # Enable Docker build cache
       # So now you can use Actions' own caching!
@@ -36,12 +44,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.target }}-buildx-
 
-      - name: Install deps
-        run: yarn install --frozen-lockfile
-        working-directory: ./build
+      # TODO: Cache build/cache "dir"
+
       - name: Run Dagger pipeline
         run: |
-          TARGET=${{ matrix.target }} yarn build
+          if [ '${{ matrix.target }}' = 'aarch64-unknown-linux-musl' ]; then
+            cargo run -- arm64_linux
+          else
+            cargo run -- x64_linux
+          fi
+          # Copy bin to "dist"
+          mkdir -p ../dist
+          cp -rf ./bin/* ../dist
         working-directory: ./build
       - name: Export properties
         id: properties
