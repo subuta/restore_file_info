@@ -45,7 +45,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ matrix.target }}-buildx-
 
-      # TODO: Cache build/cache "dir"
+      - name: Run Dagger pipeline
+        run: |
+          pwd
+          ls -alh ./
 
       - name: Run Dagger pipeline
         run: |
