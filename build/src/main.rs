@@ -1,6 +1,7 @@
 mod cache;
 mod git;
 mod cli;
+mod cargo;
 
 use std::collections::HashMap;
 use eyre::{Result, ContextCompat};
@@ -8,9 +9,10 @@ use std::path::PathBuf;
 use clap::Parser;
 use dagger_sdk::HostDirectoryOpts;
 use crate::cache::{DirCache, DirCacheOps};
+use crate::cargo::get_package_version;
 use crate::cli::Cli;
 use crate::cli::ParseCli;
-use crate::git::ls_ignored_paths;
+use crate::git::{ls_ignored_paths};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -45,6 +47,7 @@ async fn main() -> Result<()> {
     let mut builder = client
         .container()
         .from("messense/cargo-zigbuild:0.16.12")
+        .with_exec(vec!["bash", "-c", "apt-get update && apt-get install -y jq"])
         .with_mounted_directory("/app", host_source_dir.id().await?)
         .with_workdir("/app");
 
@@ -59,7 +62,9 @@ async fn main() -> Result<()> {
     result.file(&format!("/app/target/{}/release/restore_file_info", target))
         .export(&format!("./bin/{}/restore_file_info", target)).await?;
 
-    result.with_exec(vec!["bash", "-c", &format!("/app/target/{}/release/version > /app/version.txt", target)])
+    let version = get_package_version(builder).await?;
+
+    result.with_exec(vec!["bash", "-c", &format!("echo '{}' > /app/version.txt", version)])
         .file("/app/version.txt")
         .export(&format!("./bin/{}/version.txt", target)).await?;
 

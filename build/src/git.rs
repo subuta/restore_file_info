@@ -1,14 +1,7 @@
 use std::env::{current_dir, set_current_dir};
 use std::process::Command;
 use eyre::{Result};
-
-// SEE: [How to get current platform end of line character sequence in Rust? - Stack Overflow](https://stackoverflow.com/a/47541878/9998350)
-#[allow(dead_code)]
-#[cfg(windows)]
-pub const EOL: &'static str = "\r\n";
-#[allow(dead_code)]
-#[cfg(not(windows))]
-pub const EOL: &'static str = "\n";
+use crate::cli::EOL;
 
 pub fn ls_ignored_paths (dir: &str) -> Result<Vec<String>> {
     let cd = current_dir()?;

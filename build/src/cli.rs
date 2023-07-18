@@ -2,6 +2,14 @@ use std::env::consts::{ARCH};
 use std::fmt;
 use clap::{Parser, ValueEnum};
 
+// SEE: [How to get current platform end of line character sequence in Rust? - Stack Overflow](https://stackoverflow.com/a/47541878/9998350)
+#[allow(dead_code)]
+#[cfg(windows)]
+pub const EOL: &'static str = "\r\n";
+#[allow(dead_code)]
+#[cfg(not(windows))]
+pub const EOL: &'static str = "\n";
+
 #[derive(ValueEnum, Debug, Clone)]
 enum Target {
     #[value(name="x64_linux")]
@@ -28,13 +36,17 @@ pub struct Cli {
 }
 
 pub trait ParseCli {
+    fn get_default_target(&self) -> String;
     fn get_target(&self) -> String;
 }
 
 impl ParseCli for Cli {
+    fn get_default_target(&self) -> String {
+        format!("{}-unknown-linux-musl", get_arch())
+    }
     fn get_target(&self) -> String {
         // Defaults to "linux-musl" of current architecture.
-        let mut target = format!("{}-unknown-linux-musl", get_arch());
+        let mut target = self.get_default_target();
         if let Some(_target) = &self.target {
             target = _target.to_string()
         }
