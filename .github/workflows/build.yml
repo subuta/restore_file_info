@@ -23,6 +23,7 @@ jobs:
     env:
       CARGO_TERM_COLOR: always
     steps:
+      - uses: actions/checkout@v3
       # SEE: [rust-cache/.github/workflows/simple.yml at master · Swatinem/rust-cache](https://github.com/Swatinem/rust-cache/blob/master/.github/workflows/simple.yml)
       # When rustup is updated, it tries to replace its binary, which on Windows is somehow locked.
       # This can result in the CI failure, see: https://github.com/rust-lang/rustup/issues/3029
