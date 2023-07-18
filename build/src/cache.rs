@@ -50,16 +50,30 @@ impl DirCacheOps for DirCache<'_> {
 
     async fn restore(&self, container: Container) -> Result<Container> {
         let cache_dir = self.client.host().directory(self.path);
+        // Get last work_dir.
+        let work_dir = container.workdir().await?;
         let mut mounted = container;
         for (alias, dir) in self.dirs.clone() {
+            // Mount cache dir
             mounted = mounted.with_mounted_directory(dir, cache_dir.directory(alias).id().await?)
+                // and restore file_info
+                .with_workdir(dir)
+                .with_exec(vec!["restore_file_info"]);
         }
+        // Restore last work_dir.
+        mounted.with_workdir(work_dir);
         Ok(mounted)
     }
 
     async fn dump(&self, container: Container) -> Result<()> {
+        // Get last work_dir.
         for (alias, dir) in self.dirs.clone() {
-            container.directory(dir).export(&self.alias_path(alias)).await?;
+            container
+                // Dump file_info.
+                .with_workdir(dir)
+                .with_exec(vec!["restore_file_info", "dump"])
+                // and dump it to host with rfi csv.
+                .directory(dir).export(&self.alias_path(alias)).await?;
         }
         Ok(())
     }

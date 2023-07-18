@@ -50,18 +50,15 @@ async fn main() -> Result<()> {
         .container()
         .from("messense/cargo-zigbuild:0.16.12")
         .with_exec(vec!["bash", "-c", "apt-get update && apt-get install -y jq"])
-        .with_mounted_directory("/app", host_source_dir.id().await?);
+        .with_mounted_directory("/app", host_source_dir.id().await?)
+        .with_workdir("/app");
 
-    builder = dir_cache.restore(builder).await?;
     builder = install_rfi(builder);
-
-    // Restore file_info
-    builder = builder.with_workdir("/app/target")
-        .with_exec(vec!["restore_file_info"]);
+    builder = dir_cache.restore(builder).await?;
 
     let target = cli.get_target();
 
-    let mut result = builder
+    let result = builder
         .with_workdir("/app")
         .with_env_variable("CARGO_HOME", "/root/.cargo")
         .with_exec(vec!["cargo", "zigbuild", "--release", "--target", &target]);
@@ -75,10 +72,6 @@ async fn main() -> Result<()> {
     result.with_exec(vec!["bash", "-c", &format!("echo '{}' > /app/version.txt", version)])
         .file("/app/version.txt")
         .export(&format!("./bin/{}/version.txt", target)).await?;
-
-    // Dump file_info.
-    result = result.with_workdir("/app/target")
-        .with_exec(vec!["restore_file_info", "dump"]);
 
     // Dump cache into host filesystem.
     dir_cache.dump(result).await?;
