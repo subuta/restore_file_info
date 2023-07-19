@@ -1,15 +1,19 @@
-use anyhow::Result;
+mod rust_cache;
+
+use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
 use duct::cmd;
 use filetime::FileTime;
 use serde::{Deserialize, Serialize};
 use std::collections::hash_map::DefaultHasher;
+use std::env::{current_dir};
 use std::fs;
 use std::fs::File;
 use std::hash::{Hash, Hasher};
 use std::io::{BufReader, Read};
 use std::os::unix::prelude::PermissionsExt;
 use std::path::Path;
+use crate::rust_cache::{clean_registry, clean_target_dir, get_packages};
 
 // SEE: [How to get current platform end of line character sequence in Rust? - Stack Overflow](https://stackoverflow.com/a/47541878/9998350)
 #[allow(dead_code)]
@@ -42,6 +46,12 @@ pub enum Commands {
     Dump(Dump),
     /// Restore file_info csv
     Restore,
+    /// Clean cargo target_dir
+    #[clap(name="cargo_clean_target_dir")]
+    CargoCleanTargetDir,
+    /// Clean cargo registry
+    #[clap(name="cargo_clean_registry")]
+    CargoCleanRegistry,
 }
 
 #[derive(Debug, Args)]
@@ -161,6 +171,26 @@ fn main() -> Result<()> {
     match &cli.command {
         Some(Commands::Dump(args)) => dump_file_info_csv(args)?,
         Some(Commands::Restore) => restore_file_info_csv()?,
+        Some(Commands::CargoCleanTargetDir) => {
+            let cd = current_dir()?;
+            let root = &cd.to_str().context("cd")?;
+
+            // TODO: Allow override target dir.
+            let target = format!("{}/target", root.clone());
+
+            let packages = get_packages(root)?;
+
+            clean_target_dir(&target, packages, false)?;
+        },
+        Some(Commands::CargoCleanRegistry) => {
+            let cd = current_dir()?;
+            let root = &cd.to_str().context("cd")?;
+            let packages = get_packages(root)?;
+
+            // TODO: Allow override registry dir.
+            let registry = "/root/.cargo/registry".to_string();
+            clean_registry(&registry, packages, false)?;
+        },
         None => restore_file_info_csv()?,
     }
 
