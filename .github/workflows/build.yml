@@ -47,6 +47,8 @@ jobs:
         run: echo "BUILDKIT_HOST=unix:///var/run/docker.sock" >> $GITHUB_ENV
       - name: Run Dagger pipeline
         run: |
+          ls -alh /var/run
+          ls -alh /run
           yarn build -t ${{ matrix.target }}
         working-directory: ./build
       - name: Check buildx cache
