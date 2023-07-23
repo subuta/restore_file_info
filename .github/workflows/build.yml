@@ -36,7 +36,10 @@ jobs:
             ${{ runner.os }}-${{ matrix.target }}-
 
       - name: Install deps
-        run: yarn install --frozen-lockfile
+        run: |
+          ls -alh ./
+          ls -alh ./cache
+          yarn install --frozen-lockfile
         working-directory: ./build
       - name: Run Dagger pipeline
         run: |
