@@ -39,6 +39,7 @@ jobs:
         run: |
           ls -alh ./
           ls -alh ./cache
+          ls -alh ./cache/x86_64-unknown-linux-musl 2> /dev/null
           yarn install --frozen-lockfile
         working-directory: ./build
       - name: Run Dagger pipeline
