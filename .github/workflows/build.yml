@@ -49,7 +49,8 @@ jobs:
       - name: Set BUILDKIT_HOST env
         run: |
           echo "-----------"
-          name=$(echo "${{ steps.buildx.outputs.nodes }}" | jq -r '.[].name')
+          #name=$(echo "${{ steps.buildx.outputs.nodes }}" | jq -r '.[].name')
+          name=taro
           echo "$name"
           echo "-----------"
           # echo "BUILDKIT_HOST=docker-container://${{ steps.buildx.outputs.nodes }}" >> $GITHUB_ENV
