@@ -52,7 +52,7 @@ jobs:
       - name: Set BUILDKIT_HOST env
         run: |
           # SEE: https://github.com/dagger/dagger/blob/v0.6.4/core/docs/d7yxc-operator_manual.md?plain=1#L89
-          echo "_EXPERIMENTAL_DAGGER_RUNNER_HOST=docker-container://${{ steps.buildx.outputs.name }}" >> $GITHUB_ENV
+          echo "_EXPERIMENTAL_DAGGER_RUNNER_HOST=docker-container://${{ steps.buildx.outputs.name }}0" >> $GITHUB_ENV
       - name: Run Dagger pipeline
         run: |
           yarn build -t ${{ matrix.target }}
