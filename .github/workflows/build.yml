@@ -55,7 +55,8 @@ jobs:
         working-directory: ./build
       - name: Check buildx cache
         run: |
-          ls -alh /tmp/.buildx-cache
+          # TODO: Check custom buildkit configuration.
+          # ls -alh /tmp/.buildx-cache
       - name: Export properties
         id: properties
         run: |
