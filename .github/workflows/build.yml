@@ -31,9 +31,9 @@ jobs:
         id: buildx
         uses: docker/setup-buildx-action@v2
         with:
+          # Use custom dagger engine with buildkit.
+          # SEE: https://github.com/dagger/dagger/pkgs/container/engine/110943658?tag=v0.6.4
           driver-opts: |
-            # Use custom dagger engine with buildkit.
-            # SEE: https://github.com/dagger/dagger/pkgs/container/engine/110943658?tag=v0.6.4
             image=ghcr.io/dagger/engine:v0.6.4
 
       # Enable build cache
