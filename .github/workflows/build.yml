@@ -28,6 +28,7 @@ jobs:
 
       # For docker layer caching.
       - name: Set up Docker Buildx
+        id: buildx
         uses: docker/setup-buildx-action@v2
 
       # Enable build cache
@@ -44,11 +45,9 @@ jobs:
           yarn install --frozen-lockfile
         working-directory: ./build
       - name: Set BUILDKIT_HOST env
-        run: echo "BUILDKIT_HOST=unix:///var/run/docker.sock" >> $GITHUB_ENV
+        run: echo "BUILDKIT_HOST=${{ steps.buildx.outputs.nodes[0].name }}" >> $GITHUB_ENV
       - name: Run Dagger pipeline
         run: |
-          ls -alh /var/run
-          ls -alh /run
           yarn build -t ${{ matrix.target }}
         working-directory: ./build
       - name: Check buildx cache
