@@ -15,6 +15,5 @@ Cargo.lock
 
 dist/
 
-build/bin
 build/cache
 node_modules/
