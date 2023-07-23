@@ -47,7 +47,7 @@ jobs:
       - name: Set BUILDKIT_HOST env
         run: |
           echo "${{ steps.buildx.outputs.nodes }}"
-          echo "${{ steps.buildx.outputs.nodes.0 }}"
+          echo "${{ steps.buildx.outputs.nodes[0] }}"
           echo "BUILDKIT_HOST=docker-container://${{ steps.buildx.outputs.nodes }}" >> $GITHUB_ENV
       - name: Run Dagger pipeline
         run: |
