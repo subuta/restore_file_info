@@ -38,7 +38,7 @@ jobs:
       - name: Install deps
         run: |
           ls -alh ./
-          ls -alh ./cache
+          # ls -alh ./cache
           yarn install --frozen-lockfile
         working-directory: ./build
       - name: Run Dagger pipeline
