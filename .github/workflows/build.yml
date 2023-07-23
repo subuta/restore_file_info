@@ -50,8 +50,7 @@ jobs:
         run: |
           echo "-----------"
           #name=$(echo "${{ steps.buildx.outputs.nodes }}" | jq -r '.[].name')
-          name=taro
-          echo "$name"
+          echo "hoge"
           echo "-----------"
           # echo "BUILDKIT_HOST=docker-container://${{ steps.buildx.outputs.nodes }}" >> $GITHUB_ENV
       - name: Run Dagger pipeline
