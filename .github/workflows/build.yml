@@ -43,6 +43,8 @@ jobs:
         run: |
           yarn install --frozen-lockfile
         working-directory: ./build
+      - name: Set BUILDKIT_HOST env
+        run: echo "BUILDKIT_HOST=unix:///var/run/docker.sock" >> $GITHUB_ENV
       - name: Run Dagger pipeline
         run: |
           yarn build -t ${{ matrix.target }}
