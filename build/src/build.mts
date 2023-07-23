@@ -27,7 +27,7 @@ const main = async () => {
   // initialize Dagger client
   await connect(
     async (client: Client) => {
-      const dirCache = new DirCache('cache', client, [
+      const dirCache = new DirCache(`cache/${target}`, client, [
         { path: '/root/.cargo/registry' },
         { path: '/app/target', rfi: true },
       ]);
