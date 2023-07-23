@@ -3,6 +3,7 @@ name = "restore_file_info"
 version = "0.1.0"
 authors = ["subuta <shunta.3110@gmail.com>"]
 edition = "2021"
+default-run = "restore_file_info"
 
 [dependencies]
 anyhow = "1.0"

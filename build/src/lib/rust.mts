@@ -1,5 +1,6 @@
 import { bash } from './bash.mjs';
 import { Container } from '@dagger.io/dagger';
+import * as os from 'os';
 
 export const CARGO_BUILD_TARGETS = [
   'x86_64-unknown-linux-gnu',
@@ -58,4 +59,18 @@ export const installRustTools = async (
   container = await container.sync();
 
   return container;
+};
+
+export const getPackageVersion = async (
+  container: Container
+): Promise<string> => {
+  const stdout = await container
+    .withExec(
+      bash(
+        `cargo metadata --format-version=1 --no-deps | jq -r '.packages[0].version'`
+      )
+    )
+    .stdout();
+  const version = stdout.split(os.EOL)[0];
+  return `v${version}`;
 };

@@ -1,37 +1,13 @@
 mod rust_cache;
+mod fs_util;
 
 use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
-use duct::cmd;
-use filetime::FileTime;
-use serde::{Deserialize, Serialize};
-use std::collections::hash_map::DefaultHasher;
 use std::env::{current_dir};
 use std::fs;
-use std::fs::File;
-use std::hash::{Hash, Hasher};
-use std::io::{BufReader, Read};
-use std::os::unix::prelude::PermissionsExt;
 use std::path::Path;
-use crate::rust_cache::{clean_registry, clean_target_dir, get_packages};
-
-// SEE: [How to get current platform end of line character sequence in Rust? - Stack Overflow](https://stackoverflow.com/a/47541878/9998350)
-#[allow(dead_code)]
-#[cfg(windows)]
-pub const EOL: &'static str = "\r\n";
-#[allow(dead_code)]
-#[cfg(not(windows))]
-pub const EOL: &'static str = "\n";
-
-#[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct FileInfo {
-    pub file: String,
-    pub mtime_seconds: i64,
-    pub mode: u32,
-    pub hash: String,
-}
-
-pub type FileInfoList = Vec<FileInfo>;
+use rust_cache::{clean_registry, clean_target_dir, get_packages};
+use crate::fs_util::{chmod, file_content_hash, FileInfo, ls_files, touch_mtime};
 
 #[derive(Debug, Parser)]
 #[command(name = "restore_file_info", author, version, about, long_about = None)]
@@ -48,10 +24,24 @@ pub enum Commands {
     Restore,
     /// Clean cargo target_dir
     #[clap(name="cargo_clean_target_dir")]
-    CargoCleanTargetDir,
+    CargoCleanTargetDir(CargoCleanTargetDir),
     /// Clean cargo registry
     #[clap(name="cargo_clean_registry")]
-    CargoCleanRegistry,
+    CargoCleanRegistry(CargoCleanRegistry),
+}
+
+#[derive(Debug, Args)]
+pub struct CargoCleanTargetDir {
+    #[arg(short, long = "target-dir")]
+    /// Target dir path of "cargo build", defaults to "$(pwd)/target"
+    target_dir: Option<String>,
+}
+
+#[derive(Debug, Args)]
+pub struct CargoCleanRegistry {
+    #[arg(short, long = "registry-dir")]
+    /// Cargo registry dir, defaults to "/root/.cargo/registry"
+    registry_dir: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -59,52 +49,6 @@ pub struct Dump {
     #[arg(short, long = "gi", action)]
     /// Ignore git-ignore-ed files.
     gitignore: bool,
-}
-
-// SEE: [(Option to) Fingerprint by file contents instead of mtime · Issue #6529 · rust-lang/cargo](https://github.com/rust-lang/cargo/issues/6529)
-fn file_content_hash(path: &str) -> Result<String> {
-    let file = File::open(path)?;
-    let mut reader = BufReader::new(file);
-    let mut content = Vec::new();
-    reader.read_to_end(&mut content)?;
-
-    let mut hasher = DefaultHasher::new();
-    content.hash(&mut hasher);
-
-    Ok(hasher.finish().to_string())
-}
-
-fn ls_files(use_gitignore: bool) -> Result<FileInfoList> {
-    let stdout: String;
-    let files: Vec<&str>;
-    if use_gitignore {
-        // Fetch list of files with "gitignore".
-        stdout = cmd!("git", "ls-files").read()?;
-        files = stdout.split(EOL).collect();
-    } else {
-        // Fetch list of files
-        stdout = cmd!("find", ".", "-type", "f").read()?;
-        files = stdout
-            .split(EOL)
-            .map(|file| file.strip_prefix("./").unwrap_or(file))
-            .collect();
-    }
-
-    let mut list: FileInfoList = vec![];
-    for file in files.clone() {
-        let metadata = fs::metadata(file)?;
-        let mtime = FileTime::from_last_modification_time(&metadata);
-        let mode = metadata.permissions().mode();
-
-        list.push(FileInfo {
-            file: file.to_string(),
-            mtime_seconds: mtime.seconds(),
-            mode,
-            hash: file_content_hash(file)?,
-        })
-    }
-
-    Ok(list)
 }
 
 fn dump_file_info_csv(args: &Dump) -> Result<()> {
@@ -143,52 +87,36 @@ fn restore_file_info_csv() -> Result<()> {
     Ok(())
 }
 
-fn touch_mtime(file: &str, unix_seconds: &str) -> Result<()> {
-    if cfg!(windows) {
-        panic!("No support for windows currently.");
-    } else if cfg!(unix) {
-        if cfg!(target_os = "macos") {
-            // For macOS.
-            let timestamp = cmd!("date", "-r", unix_seconds, "+%Y%m%d%H%M.%S").read()?;
-            cmd!("touch", "-t", timestamp.trim(), file).run()?;
-        } else {
-            // For Linux.
-            cmd!("touch", "-d", format!("@{}", unix_seconds), file).run()?;
-        }
-    }
-
-    Ok(())
-}
-
-fn chmod(file: &str, mode: u32) -> Result<()> {
-    fs::set_permissions(&file, fs::Permissions::from_mode(mode))?;
-    Ok(())
-}
-
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match &cli.command {
         Some(Commands::Dump(args)) => dump_file_info_csv(args)?,
         Some(Commands::Restore) => restore_file_info_csv()?,
-        Some(Commands::CargoCleanTargetDir) => {
+        Some(Commands::CargoCleanTargetDir(args)) => {
             let cd = current_dir()?;
             let root = &cd.to_str().context("cd")?;
 
-            // TODO: Allow override target dir.
-            let target = format!("{}/target", root.clone());
+            let mut target = format!("{}/target", root.clone());
+            if args.target_dir.is_some() {
+                let target_dir = args.target_dir.clone().context("target_dir")?;
+                target = fs::canonicalize(&target_dir)?.to_string_lossy().into_owned();
+            }
 
             let packages = get_packages(root)?;
-
             clean_target_dir(&target, packages, false)?;
         },
-        Some(Commands::CargoCleanRegistry) => {
+        Some(Commands::CargoCleanRegistry(args)) => {
             let cd = current_dir()?;
             let root = &cd.to_str().context("cd")?;
             let packages = get_packages(root)?;
 
-            // TODO: Allow override registry dir.
-            let registry = "/root/.cargo/registry".to_string();
+            let mut registry = "/root/.cargo/registry".to_string();
+            if args.registry_dir.is_some() {
+                let registry_dir = args.registry_dir.clone().context("registry_dir")?;
+                registry = fs::canonicalize(&registry_dir)?.to_string_lossy().into_owned();
+            }
+
             clean_registry(&registry, packages, false)?;
         },
         None => restore_file_info_csv()?,

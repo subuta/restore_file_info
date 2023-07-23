@@ -6,17 +6,29 @@ import { fs } from 'zx';
 type Dir = {
   path: string;
   cargoRegistry?: boolean;
+  cargoTarget?: boolean;
   rfi?: boolean;
+};
+
+type DirCacheOptions = {
+  rustPackageDir?: string;
 };
 
 export class DirCache {
   private _path: string;
   private _client: Client;
   private _dirs: Dir[];
-  constructor(path: string, client: Client, dirs: Dir[]) {
+  private _options: DirCacheOptions | undefined;
+  constructor(
+    path: string,
+    client: Client,
+    dirs: Dir[],
+    options?: DirCacheOptions
+  ) {
     this._path = path;
     this._client = client;
     this._dirs = dirs;
+    this._options = options;
   }
 
   cacheKey(dir: string): string {
@@ -58,8 +70,40 @@ export class DirCache {
     return mounted;
   }
 
+  safeRustPackageDir() {
+    let packageDir = this._options?.rustPackageDir;
+    if (!packageDir) {
+      throw new Error(`"rustPackageDir" option not specified.`);
+    }
+    return packageDir;
+  }
+
   async dump(container: Container): Promise<boolean> {
     for (const dir of this._dirs) {
+      // Clean cargo target dir before dump.
+      if (dir.cargoTarget) {
+        container = container
+          .withWorkdir(this.safeRustPackageDir())
+          .withExec([
+            'restore_file_info',
+            'cargo_clean_target_dir',
+            '-t',
+            dir.path,
+          ]);
+      }
+
+      // Clean cargo registry dir before dump.
+      if (dir.cargoRegistry) {
+        container = container
+          .withWorkdir(this.safeRustPackageDir())
+          .withExec([
+            'restore_file_info',
+            'cargo_clean_registry',
+            '-r',
+            dir.path,
+          ]);
+      }
+
       // Dump file_info.
       if (dir.rfi) {
         container = container
