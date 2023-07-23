@@ -48,7 +48,7 @@ jobs:
         working-directory: ./build
       - name: Set BUILDKIT_HOST env
         run: |
-          echo "BUILDKIT_HOST=docker-container://${{ steps.buildx.outputs.name }}" >> $GITHUB_ENV
+          echo "BUILDKIT_HOST=docker-container://${{ steps.buildx.outputs.name }}2" >> $GITHUB_ENV
       - name: Run Dagger pipeline
         run: |
           yarn build -t ${{ matrix.target }}
