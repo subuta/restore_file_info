@@ -26,6 +26,10 @@ jobs:
           node-version: 18
       - uses: actions/checkout@v3
 
+      # For docker layer caching.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
       # Enable build cache
       - name: Cache Build caches
         uses: actions/cache@v3
@@ -43,6 +47,9 @@ jobs:
         run: |
           yarn build -t ${{ matrix.target }}
         working-directory: ./build
+      - name: Check buildx cache
+        run: |
+          ls -alh /tmp/.buildx-cache
       - name: Export properties
         id: properties
         run: |
