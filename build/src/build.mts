@@ -35,7 +35,7 @@ const main = async () => {
         `cache/${target}`,
         client,
         [
-          { path: '/root/.cargo/registry', cargoRegistry: true, rfi: true },
+          { path: '/root/.cargo/registry', cargoRegistry: true },
           { path: '/app/target', cargoTarget: true, rfi: true },
         ],
         {
