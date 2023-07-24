@@ -26,6 +26,11 @@ jobs:
           node-version: 18
       - uses: actions/checkout@v3
 
+      # SEE: [crazy-max/ghaction-github-runtime: :octocat: GitHub Action to expose GitHub runtime to the workflow](https://github.com/crazy-max/ghaction-github-runtime)
+      # SEE: [GitHub Actions cache | Docker Documentation](https://docs.docker.com/build/cache/backends/gha/#authentication)
+      - name: Expose GitHub Runtime
+        uses: crazy-max/ghaction-github-runtime@v2
+
       # Enable build cache
       - name: Cache Build caches
         uses: actions/cache@v3
