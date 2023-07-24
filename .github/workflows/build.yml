@@ -44,11 +44,11 @@ jobs:
         run: |
           yarn install --frozen-lockfile
         working-directory: ./build
-      - name: Set BUILDKIT_HOST env
+      - name: Try _EXPERIMENTAL_DAGGER_CACHE_CONFIG env for cache dagger(buildkit) layers.
         run: |
           # Try experimental GHA cache support.
           # SEE: [Initial support for remote cache config. by sipsma · Pull Request #4543 · dagger/dagger](https://github.com/dagger/dagger/pull/4543)
-          echo "_EXPERIMENTAL_DAGGER_CACHE_CONFIG=type=gha,scope=rfi-dagger-cache-$GITHUB_REF_NAME-${{ matrix.target }},url=$ACTIONS_CACHE_URL,token=$ACTIONS_RUNTIME_TOKEN,mode=max,ignore-error=true" >> $GITHUB_ENV
+          # echo "_EXPERIMENTAL_DAGGER_CACHE_CONFIG=type=gha,scope=rfi-dagger-cache-$GITHUB_REF_NAME-${{ matrix.target }},url=$ACTIONS_CACHE_URL,token=$ACTIONS_RUNTIME_TOKEN,mode=max,ignore-error=true" >> $GITHUB_ENV
       - name: Run Dagger pipeline
         run: |
           yarn build -t ${{ matrix.target }}
