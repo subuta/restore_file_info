@@ -5,7 +5,7 @@ use anyhow::{Context, Result};
 use clap::{Args, Parser, Subcommand};
 use std::env::{current_dir};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use rust_cache::{clean_registry, clean_target_dir, get_packages};
 use crate::fs_util::{chmod, file_content_hash, FileInfo, ls_files, touch_mtime};
 
@@ -100,7 +100,7 @@ fn main() -> Result<()> {
             let mut target = format!("{}/target", root.clone());
             if args.target_dir.is_some() {
                 let target_dir = args.target_dir.clone().context("target_dir")?;
-                target = fs::canonicalize(&target_dir)?.to_string_lossy().into_owned();
+                target = fs::canonicalize(&PathBuf::from(target_dir))?.to_string_lossy().into_owned();
             }
 
             let packages = get_packages(root)?;

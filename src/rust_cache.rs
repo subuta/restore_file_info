@@ -198,27 +198,30 @@ fn is_outdated(dirent: &DirEntry) -> Result<bool> {
 }
 
 fn rm_except(dir_name: &str, keep_prefix: Vec<String>, check_time_stamp: bool) -> Result<()> {
-    let dir = fs::read_dir(dir_name)?;
-    for _dirent in dir {
-        let dirent = _dirent?;
-        if check_time_stamp {
-            if is_outdated(&dirent)? {
+    let dir = fs::read_dir(dir_name);
+    // Process only if dir exists.
+    if let Ok(_dir) = dir {
+        for _dirent in dir {
+            let dirent = _dirent?;
+            if check_time_stamp {
+                if is_outdated(&dirent)? {
+                    rm(dirent)?;
+                }
+                continue;
+            }
+
+            let mut name = dirent.file_name().to_string_lossy().into_owned();
+
+            // strip the trailing hash
+            let _idx = name.rfind("-");
+            if _idx.is_some() {
+                let idx = _idx.context("idx")?;
+                name = name[0..idx].parse()?;
+            }
+
+            if !keep_prefix.contains(&name) {
                 rm(dirent)?;
             }
-            continue;
-        }
-
-        let mut name = dirent.file_name().to_string_lossy().into_owned();
-
-        // strip the trailing hash
-        let _idx = name.rfind("-");
-        if _idx.is_some() {
-            let idx = _idx.context("idx")?;
-            name = name[0..idx].parse()?;
-        }
-
-        if !keep_prefix.contains(&name) {
-            rm(dirent)?;
         }
     }
     Ok(())
