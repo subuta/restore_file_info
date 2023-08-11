@@ -76,11 +76,17 @@ fn restore_file_info_csv() -> Result<()> {
     let mut reader = csv::Reader::from_path(path)?;
     for result in reader.deserialize() {
         let info: FileInfo = result?;
-        let content_hash = file_content_hash(&info.file)?;
-        // Apply modification only if content-hash is matched.
-        if info.hash == content_hash {
-            touch_mtime(&info.file, &info.mtime_seconds.to_string())?;
-            chmod(&info.file, info.mode)?;
+
+        let content_hash_res = file_content_hash(&info.file);
+        if content_hash_res.is_ok() {
+            let content_hash = content_hash_res?;
+            // Apply modification only if content-hash is matched.
+            if info.hash == content_hash {
+                touch_mtime(&info.file, &info.mtime_seconds.to_string())?;
+                chmod(&info.file, info.mode)?;
+            }
+        } else {
+            println!("Got error on parse file_info of '{}'", &info.file);
         }
     }
 
@@ -114,7 +120,7 @@ fn main() -> Result<()> {
             let mut registry = "/root/.cargo/registry".to_string();
             if args.registry_dir.is_some() {
                 let registry_dir = args.registry_dir.clone().context("registry_dir")?;
-                registry = fs::canonicalize(&registry_dir)?.to_string_lossy().into_owned();
+                registry = fs::canonicalize(&PathBuf::from(registry_dir))?.to_string_lossy().into_owned();
             }
 
             clean_registry(&registry, packages, false)?;

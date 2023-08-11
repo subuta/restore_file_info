@@ -85,23 +85,29 @@ impl GetPackages for Meta {
 }
 
 pub fn clean_target_dir(target_dir: &str, packages: Packages, check_time_stamp: bool) -> Result<()> {
-    let dir = fs::read_dir(target_dir)?;
-    for _dirent in dir {
-        let _packages = packages.clone();
-        let dirent = _dirent?;
-        let dirname = dirent.path().to_string_lossy().into_owned();
-        let metadata = dirent.metadata()?;
-        if metadata.is_dir() {
-            let cachedir_tag_exists = dirent.path().join("CACHEDIR.TAG").exists();
-            let rustc_info_exists = dirent.path().join(".rustc_info.json").exists();
-            let is_nested_target = cachedir_tag_exists || rustc_info_exists;
-            if is_nested_target {
-                clean_target_dir(&dirname, _packages, check_time_stamp)?;
-            } else {
-                clean_profile_target(&dirname, _packages, check_time_stamp)?;
+    let dir = fs::read_dir(target_dir);
+    if let Ok(_dir) = dir {
+        for _dirent in _dir {
+            if _dirent.is_err() {
+                println!("Failed to unwrap dirent = '{:?}'", _dirent);
+                continue;
             }
-        } else if dirent.file_name() != "CACHEDIR.TAG" {
-            rm(dirent)?;
+            let _packages = packages.clone();
+            let dirent = _dirent?;
+            let dirname = dirent.path().to_string_lossy().into_owned();
+            let metadata = dirent.metadata()?;
+            if metadata.is_dir() {
+                let cachedir_tag_exists = dirent.path().join("CACHEDIR.TAG").exists();
+                let rustc_info_exists = dirent.path().join(".rustc_info.json").exists();
+                let is_nested_target = cachedir_tag_exists || rustc_info_exists;
+                if is_nested_target {
+                    clean_target_dir(&dirname, _packages, check_time_stamp)?;
+                } else {
+                    clean_profile_target(&dirname, _packages, check_time_stamp)?;
+                }
+            } else if dirent.file_name() != "CACHEDIR.TAG" {
+                rm(dirent)?;
+            }
         }
     }
     Ok(())
@@ -138,6 +144,10 @@ pub fn clean_registry(registry_dir: &str, packages: Packages, crates: bool) -> R
 
     let index_dir = fs::read_dir(format!("{}/index", registry_dir))?;
     for _dirent in index_dir {
+        if _dirent.is_err() {
+            println!("Failed to unwrap dirent = '{:?}'", _dirent);
+            continue;
+        }
         let dirent = _dirent?;
         let metadata = dirent.metadata()?;
         if metadata.is_dir() {
@@ -157,25 +167,35 @@ pub fn clean_registry(registry_dir: &str, packages: Packages, crates: bool) -> R
     }
 
     let pkg_set = packages.into_iter().map(|p| format!("{}-{}.crate", p.name, p.version)).collect::<Vec<_>>();
-    let cache_dir = fs::read_dir(format!("{}/cache", registry_dir))?;
-    for _dirent in cache_dir {
-        let dirent = _dirent?;
-        let metadata = dirent.metadata()?;
-        if metadata.is_dir() {
-            let dir = fs::read_dir(dirent.path())?;
-            for _dirent in dir {
-                let dirent = _dirent?;
-                let metadata = dirent.metadata()?;
-                let name = dirent.file_name().to_string_lossy().into_owned();
-                // here we check that the downloaded `.crate` matches one from our dependencies
-                if metadata.is_file() && !pkg_set.contains(&name) {
-                    rm(dirent)?;
+    let cache_dir = fs::read_dir(format!("{}/cache", registry_dir));
+    if let Ok(_cache_dir) = cache_dir {
+        for _dirent in _cache_dir {
+            if _dirent.is_err() {
+                println!("Failed to unwrap dirent = '{:?}'", _dirent);
+                continue;
+            }
+            let dirent = _dirent?;
+            let metadata = dirent.metadata()?;
+            if metadata.is_dir() {
+                let dir = fs::read_dir(dirent.path())?;
+                for _dirent in dir {
+                    if _dirent.is_err() {
+                        println!("Failed to unwrap dirent = '{:?}'", _dirent);
+                        continue;
+                    }
+                    let dirent = _dirent?;
+                    let metadata = dirent.metadata()?;
+                    let name = dirent.file_name().to_string_lossy().into_owned();
+                    // here we check that the downloaded `.crate` matches one from our dependencies
+                    if metadata.is_file() && !pkg_set.contains(&name) {
+                        rm(dirent)?;
+                    }
                 }
             }
         }
-    }
 
-    // `.cargo/registry/cache`
+        // `.cargo/registry/cache`
+    }
 
     Ok(())
 }
@@ -201,7 +221,11 @@ fn rm_except(dir_name: &str, keep_prefix: Vec<String>, check_time_stamp: bool) -
     let dir = fs::read_dir(dir_name);
     // Process only if dir exists.
     if let Ok(_dir) = dir {
-        for _dirent in dir {
+        for _dirent in _dir {
+            if _dirent.is_err() {
+                println!("Failed to unwrap dirent = '{:?}'", _dirent);
+                continue;
+            }
             let dirent = _dirent?;
             if check_time_stamp {
                 if is_outdated(&dirent)? {

@@ -7,3 +7,8 @@ build_with_s3_cache:
 .PHONY: prepare-minio
 prepare-minio:
 	docker run --rm --network="restore_file_info_default" --entrypoint sh minio/mc -c "mc config host add myminio http://minio:9000 minio_user minio_password && mc mb --ignore-existing myminio/dagger-s3-cache && mc anonymous set none myminio/dagger-s3-cache"
+
+# Build for all targets in local
+.PHONY: build
+build:
+	cd ./build && yarn build -t x86_64-unknown-linux-musl && yarn build -t aarch64-unknown-linux-musl
